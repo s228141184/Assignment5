@@ -5,10 +5,13 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BrokerServer {
-    public static int clientID = 0;
-    public Map<Integer, String, Se>
+    public static int clientID = 1;
+    public static Map<String, Set<String>> topicsSub = new ConcurrentHashMap<>();
+    public static Map<Integer, PrintWriter> clients = new ConcurrentHashMap<>();
     public static int PORT = 5008;
 
     public static void main(String[] args) {
@@ -38,10 +41,27 @@ public class BrokerServer {
         public void run() {
             try {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                out = new PrintWriter(socket.getOutputStream());
+                out = new PrintWriter(socket.getOutputStream(), true);
 
+                out.println("Client ID: " + clientID);
+                clients.put(clientID, out);
+
+                String input;
+                while((input = in.readLine()) != null){
+                    System.out.println("Recieved from client :" + clientID + " " + input);
+                    handleSupBroc(input);
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            }
+        }
+
+        private void handleSupBroc(String input) {
+
+            if(input.equalsIgnoreCase("SUBSCRIBE")){
+                topicsSub.put()
+            } else if (input.equalsIgnoreCase("UNSUBSCRIBE")) {
+
             }
         }
     }
