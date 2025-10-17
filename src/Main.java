@@ -1,45 +1,40 @@
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.*;
+import java.net.Socket;
+import java.util.Scanner;
 
 public class Main {
-    public Main() {
-        // Get the broker.
-        PubSubBroker broker = PubSubBroker.getInstance();
-
-        // Some subscribers.
-        Subscriber s01 = (publisher, topic, params)
-                -> System.out.printf("s01: %s message received.\n", topic);
-        Subscriber s02 = (publisher, topic, params)
-                -> System.out.printf("s02: Hello %s message received. Extra = %d\n",
-                params.get("name"), params.get("extra"));
-
-        // Subscribe for some topics.
-        System.out.println("Subscribing...");
-        broker.subscribe("hello", s01);
-        broker.subscribe("hello", s02);
-        broker.subscribe("goodbye", s01);
-
-        // Publishing
-        System.out.println("Publishing...");
-        Map<String, Object> params = new HashMap<>();
-        params.put("name", "Bob");
-        params.put("extra", 10);
-        broker.publish(this, "hello", params);
-
-        broker.publish(this, "goodbye", null);
-
-        System.out.println("Unsubscribing s01...");
-        broker.unsubscribe(s01);
-
-        System.out.println("Republishing...");
-        broker.publish(this, "hello", params);
-        broker.publish(this, "goodbye", null);
-    }
+    private static final String HOST = "localhost";
+    private static final int PORT = 5008;
 
     public static void main(String[] args) {
-        new Main();
+        try {
+            Socket socket = new Socket(HOST, PORT);
+            System.out.println("Connected to Broker");
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            Scanner scanner = new Scanner(System.in);
+
+            new Thread(() -> {
+                try {
+                    String msg;
+                    while ((msg = in.readLine()) != null) {
+                        System.out.println(msg);
+                    }
+                } catch (IOException e) {
+                    System.out.println("❌ Connection closed.");
+                }
+            }).start();
+
+            while (true) {
+                System.out.print("> ");
+                String userInput = scanner.nextLine();
+                out.println(userInput);
+            }
+
+        } catch (IOException e) {
+            System.out.println("Could not connect to broker: " + e.getMessage());
+        }
     }
-
-
 }
